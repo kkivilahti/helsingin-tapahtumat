@@ -151,7 +151,7 @@ h1, .h1 {
   color: #fcfcfc;
   letter-spacing: 1px;
   text-shadow: 2px 3px 4px #2e2e2e;
-  margin-top: 5%;
+  margin-top: 7%;
 }
 
 @media (max-width: 768px) {
@@ -293,10 +293,16 @@ sup {
 
 a {
   color: var(--bs-link-color);
-  text-decoration: underline;
+  text-decoration: none;
 }
 a:hover {
   color: var(--bs-link-hover-color);
+}
+.carousel a {
+  color: white;
+}
+.carousel a:hover {
+  color: #dedede;
 }
 
 a:not([href]):not([class]), a:not([href]):not([class]):hover {
