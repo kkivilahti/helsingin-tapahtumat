@@ -111,7 +111,6 @@ body {
   background-position: center;
   background-size: cover;
   height: 650px;
-  border-bottom: #47596d 2px solid;
 }
 @media (max-width: 1200px) {
   .bg-image-full {
