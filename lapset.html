@@ -68,18 +68,38 @@
             let all = [];
             document.getElementById("loading-spinner").style.display = "block";
             fetch('https://api.hel.fi/linkedevents/v1/event/?format=json&local_ongoing_AND=leikkiminen&sort=start_time')
-                .then(function(response) {
+            .then(function(response) {
                     return response.json();
                 })
                 .then(function(responseJSON) {
                     all = responseJSON.data;
-                    parse(all);
+        
+                    // sijaintitiedot tapahtumille
+                    const locationPromises = all.map(event => {
+                        return fetch(event.location['@id'])
+                            .then(response => response.json())
+                            .then(locationData => {
+                                event.locationData = locationData; // Lisätään sijaintidata tapahtumaan
+                                return event;
+                            })
+                            .catch(error => {
+                                console.error("Virhe sijaintia haettaessa:", error);
+                                event.locationData = { name: { fi: "Sijaintia ei saatavilla" } }; 
+                                return event;
+                            });
+                    });
+        
+                    return Promise.all(locationPromises); 
+                })
+                .then(function(eventsWithLocations) {
+                    parse(eventsWithLocations); 
                     document.getElementById("loading-spinner").style.display = "none";
                 })
                 .catch(function(error) {
                     document.getElementById("results").innerHTML = "<p>Tietoa ei pystytä hakemaan</p>";
+                    console.error("Virhe haettaessa tietoja:", error);
                 });
-
+        
             // tapahtumien suodatus hinnan mukaan
             function showAll() {
                 parse(all);
@@ -92,23 +112,30 @@
                 let paid = all.filter(event => event.offers[0].is_free === false);
                 parse(paid);
             }
-
+        
             function parse(data) {
                 let text = "";
-
+        
                 for (let i = 0; i < data.length; i++) {
                     text += "<hr>";
                     text += "<h4 class='mb-3'><b>" + data[i].name.fi + "</b></h4>";
+                    
+                    let locationName = data[i].locationData.name.fi || "Sijaintia ei saatavilla";
+                    text += "<li><b>Sijainti: </b>" + locationName + "</li>";
+                    
                     let start = data[i].start_time;
                     let end = data[i].end_time;
-                    text += "<li><b>Tapahtuma alkaa: </b>" + start.substr(0,10) + "</li>";
-                    text += "<li><b>Tapahtuma päättyy: </b>" + end.substr(0,10) + "</li>";
+                    text += "<li><b>Tapahtuma alkaa: </b>" + start.substr(0, 10) + "</li>";
+                    text += "<li><b>Tapahtuma päättyy: </b>" + end.substr(0, 10) + "</li>";
+        
                     if (data[i].offers[0].is_free === true) {
                         text += "<li><b>Tapahtuma on ilmainen</b></li>";
                     } else if (data[i].offers[0].is_free === false) {
                         text += "<li><b>Osallistumismaksu: </b>" + data[i].offers[0].price.fi + "</li>";
                     }
+        
                     text += "<p>" + data[i].description.fi + "</p>";
+                    
                     if (data[i].images.length > 0) {
                         text += "<img class='js-kuva mb-3' src='" + data[i].images[0].url + "' alt='" + data[i].images[0].alt_text + "' loading='lazy'>";
                     }
@@ -116,7 +143,7 @@
                         text += "<p class='mb-4'><b>Lue lisää:</b> <a href='" + data[i].info_url.fi + "'>" + data[i].info_url.fi + "</a></p>";
                     }
                 }
-
+        
                 document.getElementById("results").innerHTML = text;  
             }
         </script>
